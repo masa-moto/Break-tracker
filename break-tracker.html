@@ -1,0 +1,235 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<h2 class="sr-only">離席ログ — 時刻記録ツール</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);color:var(--color-text-primary);padding:1.5rem 1rem}
+.clock{text-align:center;font-size:52px;font-weight:500;letter-spacing:2px;line-height:1;margin-bottom:4px}
+.date{text-align:center;font-size:14px;color:var(--color-text-secondary);margin-bottom:1.5rem}
+
+.btns{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.5rem}
+.btn-cat{
+  border-width:2px;border-style:solid;border-radius:var(--border-radius-lg);
+  padding:16px 12px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  transition:filter 0.12s,transform 0.08s;
+}
+.btn-cat:active{transform:scale(0.96)}
+.btn-cat:hover{filter:brightness(0.93)}
+.btn-cat .icon{font-size:24px}
+.btn-cat .label{font-size:14px;font-weight:500}
+.btn-cat .sub{font-size:11px;opacity:0.75}
+
+.cat-toilet{background:#EBF5FD;border-color:#378ADD;color:#0C447C}
+.cat-outing{background:#E4F5EE;border-color:#1D9E75;color:#085041}
+.cat-snack {background:#FDF3E0;border-color:#BA7517;color:#633806}
+.cat-break {background:#FCEDF4;border-color:#D4537E;color:#72243E}
+
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.section-title{font-size:13px;font-weight:500;color:var(--color-text-secondary)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:1.25rem}
+.stat{border-radius:var(--border-radius-md);padding:8px;text-align:center;border-width:1.5px;border-style:solid}
+.stat-n{font-size:18px;font-weight:500}
+.stat-l{font-size:10px;margin-top:2px;opacity:0.8}
+.stat-toilet{background:#EBF5FD;border-color:#378ADD;color:#0C447C}
+.stat-outing{background:#E4F5EE;border-color:#1D9E75;color:#085041}
+.stat-snack {background:#FDF3E0;border-color:#BA7517;color:#633806}
+.stat-break {background:#FCEDF4;border-color:#D4537E;color:#72243E}
+
+.log-wrap{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;max-height:280px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{
+  position:sticky;top:0;background:var(--color-background-secondary);
+  font-weight:500;font-size:11px;color:var(--color-text-secondary);
+  text-align:left;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);
+  text-transform:uppercase;letter-spacing:0.04em
+}
+thead th:last-child{width:28px}
+tbody tr{border-bottom:0.5px solid var(--color-border-tertiary)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--color-background-secondary)}
+tbody td{padding:9px 12px;vertical-align:middle}
+.td-time{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap;color:var(--color-text-primary)}
+.td-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:500;border-width:1px;border-style:solid}
+.badge-toilet{background:#EBF5FD;border-color:#378ADD;color:#0C447C}
+.badge-outing{background:#E4F5EE;border-color:#1D9E75;color:#085041}
+.badge-snack {background:#FDF3E0;border-color:#BA7517;color:#633806}
+.badge-break {background:#FCEDF4;border-color:#D4537E;color:#72243E}
+.td-del{text-align:right}
+.del-btn{background:#D3D1C7;border:1.5px solid #B4B2A9;cursor:pointer;color:#444441;padding:0;border-radius:var(--border-radius-md);font-size:15px;line-height:1;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.del-btn:hover{background:#B4B2A9;border-color:#888780}
+.empty{padding:28px;text-align:center;color:var(--color-text-secondary);font-size:13px}
+
+.actions{display:flex;gap:10px;margin-top:1rem}
+.actions button{flex:1;border:2px solid #B4B2A9;border-radius:var(--border-radius-lg);padding:12px 8px;background:#F1EFE8;cursor:pointer;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:7px;color:#2C2C2A}
+.actions button:hover{background:#D3D1C7;border-color:#888780}
+.actions button:active{transform:scale(0.97)}
+.actions .btn-danger{flex:0 0 46px;padding:12px 0}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px 16px;font-size:13px;opacity:0;transition:opacity 0.2s,transform 0.2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+
+<div class="clock" id="clock">00:00:00</div>
+<div class="date" id="date">---</div>
+
+<div class="btns">
+  <button class="btn-cat cat-toilet" onclick="log('toilet')">
+    <i class="ti ti-toilet-paper icon" aria-hidden="true"></i>
+    <span class="label">トイレ</span>
+    <span class="sub">Restroom</span>
+  </button>
+  <button class="btn-cat cat-outing" onclick="log('outing')">
+    <i class="ti ti-walk icon" aria-hidden="true"></i>
+    <span class="label">外出</span>
+    <span class="sub">Going out</span>
+  </button>
+  <button class="btn-cat cat-snack" onclick="log('snack')">
+    <i class="ti ti-bread icon" aria-hidden="true"></i>
+    <span class="label">軽食</span>
+    <span class="sub">Snack / meal</span>
+  </button>
+  <button class="btn-cat cat-break" onclick="log('break')">
+    <i class="ti ti-coffee icon" aria-hidden="true"></i>
+    <span class="label">休憩</span>
+    <span class="sub">Break</span>
+  </button>
+</div>
+
+<div class="section-head">
+  <span class="section-title">本日の記録</span>
+  <span class="section-title" id="total-count">0 件</span>
+</div>
+
+<div class="stats">
+  <div class="stat stat-toilet"><div class="stat-n" id="s-toilet">0</div><div class="stat-l">トイレ</div></div>
+  <div class="stat stat-outing"><div class="stat-n" id="s-outing">0</div><div class="stat-l">外出</div></div>
+  <div class="stat stat-snack" ><div class="stat-n" id="s-snack">0</div><div class="stat-l">軽食</div></div>
+  <div class="stat stat-break" ><div class="stat-n" id="s-break">0</div><div class="stat-l">休憩</div></div>
+</div>
+
+<div class="log-wrap" id="log-wrap">
+  <div class="empty">まだ記録がありません</div>
+</div>
+
+<div class="actions">
+  <button onclick="exportFile('md')"><i class="ti ti-file-text" aria-hidden="true"></i>Markdown</button>
+  <button onclick="exportFile('txt')"><i class="ti ti-file" aria-hidden="true"></i>TXT</button>
+  <button onclick="clearLog()" class="btn-danger"><i class="ti ti-trash" aria-hidden="true"></i></button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATS = {
+  toilet:{label:'トイレ', icon:'ti-toilet-paper'},
+  outing:{label:'外出',   icon:'ti-walk'},
+  snack: {label:'軽食',   icon:'ti-bread'},
+  break: {label:'休憩',   icon:'ti-coffee'},
+};
+
+let entries = [];
+const todayKey = () => new Date().toISOString().slice(0,10);
+
+function loadStorage() {
+  try {
+    const raw = localStorage.getItem('break-log-v2');
+    if (raw) entries = JSON.parse(raw);
+  } catch(e) {}
+}
+
+function saveStorage() {
+  try { localStorage.setItem('break-log-v2', JSON.stringify(entries)); } catch(e) {}
+}
+
+function log(cat) {
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  entries.unshift({ts, cat, iso:now.toISOString()});
+  saveStorage();
+  render();
+  toast(`${CATS[cat].label} — ${ts}`);
+}
+
+function delEntry(i) { entries.splice(i,1); saveStorage(); render(); }
+
+function render() {
+  const today = todayKey();
+  const todayEntries = entries.filter(e => e.iso.slice(0,10) === today);
+  const counts = {toilet:0,outing:0,snack:0,break:0};
+  todayEntries.forEach(e => counts[e.cat]++);
+  Object.keys(counts).forEach(k => document.getElementById('s-'+k).textContent = counts[k]);
+  document.getElementById('total-count').textContent = todayEntries.length + ' 件（本日）';
+
+  const wrap = document.getElementById('log-wrap');
+  if (!entries.length) { wrap.innerHTML = '<div class="empty">まだ記録がありません</div>'; return; }
+
+  const fmtDate = iso => {
+    const d = new Date(iso);
+    return d.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',weekday:'short'});
+  };
+
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>日付</th><th>時刻</th><th>カテゴリ</th><th></th>
+    </tr></thead>
+    <tbody>` +
+    entries.map((e,i) => `<tr>
+      <td class="td-time" style="color:var(--color-text-secondary);font-weight:400">${fmtDate(e.iso)}</td>
+      <td class="td-time">${e.ts}</td>
+      <td><span class="td-badge badge-${e.cat}"><i class="ti ${CATS[e.cat].icon}" aria-hidden="true"></i>${CATS[e.cat].label}</span></td>
+      <td class="td-del"><button class="del-btn" onclick="delEntry(${i})" aria-label="削除"><i class="ti ti-x"></i></button></td>
+    </tr>`).join('') +
+    `</tbody></table>`;
+}
+
+function clearLog() {
+  if (!entries.length) return;
+  if (!confirm('本日の記録をすべて削除しますか？')) return;
+  entries = []; saveStorage(); render();
+}
+
+function exportFile(fmt) {
+  if (!entries.length) { toast('記録がありません'); return; }
+  const day = todayKey();
+  const counts = {toilet:0,outing:0,snack:0,break:0};
+  entries.forEach(e => counts[e.cat]++);
+  let text;
+  if (fmt === 'md') {
+    text = ['# 離席ログ', `**日付**: ${day}`, '',
+      '| 時刻 | カテゴリ |', '|------|----------|',
+      ...entries.slice().reverse().map(e => `| ${e.iso.slice(0,10)} | ${e.ts} | ${CATS[e.cat].label} |`),
+      '', '## サマリー',
+      ...Object.entries(CATS).map(([k,v]) => `- ${v.label}: ${counts[k]} 回`)
+    ].join('\n');
+  } else {
+    text = `離席ログ ${day}\n${'='.repeat(20)}\n` +
+      entries.slice().reverse().map(e => `${e.ts}  ${CATS[e.cat].label}`).join('\n') +
+      `\n\n[サマリー]\n` + Object.entries(CATS).map(([k,v]) => `${v.label}: ${counts[k]} 回`).join('\n');
+  }
+  const a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+  a.download = `break-log-${day}.${fmt==='md'?'md':'txt'}`;
+  a.click();
+  toast(`${fmt.toUpperCase()} として保存しました`);
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toTimeString().slice(0,8);
+  document.getElementById('date').textContent = now.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+}
+
+loadStorage(); render(); updateClock();
+setInterval(updateClock, 1000);
+</script>
